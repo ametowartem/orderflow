@@ -1,21 +1,21 @@
 package main
 
 import (
-	"log"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
-func health(w http.ResponseWriter, req *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	if _, err := w.Write([]byte("ok")); err != nil {
-		log.Printf("health: failed to write response: %v", err)
-	}
+func health(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "ok",
+	})
 }
 
 func main() {
-	http.HandleFunc("/health", health)
+	r := gin.Default()
 
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		log.Fatal(err)
-	}
+	r.GET("/health", health)
+
+	r.Run()
 }
