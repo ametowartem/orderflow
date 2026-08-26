@@ -1,8 +1,12 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
+	"github.com/ametowartem/orderflow/orders-service/internal/handler"
+	"github.com/ametowartem/orderflow/orders-service/internal/service"
+	"github.com/ametowartem/orderflow/orders-service/internal/store"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,7 +19,16 @@ func health(c *gin.Context) {
 func main() {
 	r := gin.Default()
 
-	r.GET("/health", health)
+	memStore := store.NewMemoryStore()
+	svc := service.NewOrderService(memStore)
+	handler := handler.NewOrderHandler(svc)
 
-	r.Run()
+	r.GET("/health", health)
+	r.GET("/orders", handler.GetOrders)
+	r.GET("/orders/:id", handler.GetOrderById)
+	r.POST("/orders", handler.Create)
+
+	if err := r.Run(); err != nil {
+		log.Fatal(err)
+	}
 }

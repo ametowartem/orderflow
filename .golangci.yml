@@ -1,0 +1,35 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    # обязательный минимум — то, что реально ловит баги, а не стиль
+    - govet # находит подозрительные конструкции (Printf-аргументы, копирование мьютексов и т.п.)
+    - staticcheck # самый умный линтер, ловит логические ошибки
+    - errcheck # именно то, что мы разбирали на ревью: непроверенные ошибки
+    - ineffassign # присвоил значение переменной и никогда не прочитал
+    - unused # неиспользуемые переменные/функции/импорты
+
+    # чуть более "придирчивые", но полезные на твоём уровне
+    - modernize # предлагает более идиоматичный/короткий вариант кода
+    - bodyclose # забыл closeAll() у http.Response.Body — частая утечка
+    - contextcheck # неправильная передача context.Context
+    - copyloopvar # для Go >=1.22, ловит устаревшие паттерны захвата переменной цикла
+    - nilerr # return nil там, где реально была ошибка (тот самый баг с проглоченным err)
+
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+
+exclusions:
+  rules:
+    # в тестах часто осознанно не проверяют err у os.WriteFile/t.Cleanup и т.п.
+    - path: '_test\.go'
+      linters:
+        - errcheck
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
