@@ -9,6 +9,7 @@ type Order struct {
 	UserID      string
 	Status      OrderStatus
 	TotalAmount float64
+	Items       []OrderItem
 	CreatedAt   time.Time
 }
 
@@ -18,3 +19,10 @@ const (
 	StatusPending   OrderStatus = "pending"
 	StatusCancelled OrderStatus = "cancelled"
 )
+
+type OrderItem struct {
+	ID           string
+	ProductID    string
+	Quantity     int
+	PriceAtOrder float64
+}

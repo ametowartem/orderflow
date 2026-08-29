@@ -22,7 +22,7 @@ func (s *MemoryStore) Create(order domain.Order) error {
 	return nil
 }
 
-func (s *MemoryStore) GetById(id string) (domain.Order, error) {
+func (s *MemoryStore) GetByID(id string) (domain.Order, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

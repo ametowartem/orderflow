@@ -33,3 +33,7 @@ go.work.sum
 .ctxdump.yaml
 .ctxdump-cache.json
 saved-listing.md
+
+.git
+*.md
+bin/
