@@ -130,7 +130,7 @@ const file_inventory_v1_inventory_proto_rawDesc = "" +
 	"\tavailable\x18\x01 \x01(\bR\tavailable2c\n" +
 	"\x10InventoryService\x12O\n" +
 	"\n" +
-	"ChackStock\x12\x1f.inventory.v1.CheckStockRequest\x1a .inventory.v1.CheckStockResponseBAZ?github.com/ametowartem/orderflow/proto/inventory/v1;inventoryv1b\x06proto3"
+	"CheckStock\x12\x1f.inventory.v1.CheckStockRequest\x1a .inventory.v1.CheckStockResponseBAZ?github.com/ametowartem/orderflow/proto/inventory/v1;inventoryv1b\x06proto3"
 
 var (
 	file_inventory_v1_inventory_proto_rawDescOnce sync.Once
@@ -150,8 +150,8 @@ var file_inventory_v1_inventory_proto_goTypes = []any{
 	(*CheckStockResponse)(nil), // 1: inventory.v1.CheckStockResponse
 }
 var file_inventory_v1_inventory_proto_depIdxs = []int32{
-	0, // 0: inventory.v1.InventoryService.ChackStock:input_type -> inventory.v1.CheckStockRequest
-	1, // 1: inventory.v1.InventoryService.ChackStock:output_type -> inventory.v1.CheckStockResponse
+	0, // 0: inventory.v1.InventoryService.CheckStock:input_type -> inventory.v1.CheckStockRequest
+	1, // 1: inventory.v1.InventoryService.CheckStock:output_type -> inventory.v1.CheckStockResponse
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name

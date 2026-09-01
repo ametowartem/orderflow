@@ -19,14 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	InventoryService_ChackStock_FullMethodName = "/inventory.v1.InventoryService/ChackStock"
+	InventoryService_CheckStock_FullMethodName = "/inventory.v1.InventoryService/CheckStock"
 )
 
 // InventoryServiceClient is the client API for InventoryService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type InventoryServiceClient interface {
-	ChackStock(ctx context.Context, in *CheckStockRequest, opts ...grpc.CallOption) (*CheckStockResponse, error)
+	CheckStock(ctx context.Context, in *CheckStockRequest, opts ...grpc.CallOption) (*CheckStockResponse, error)
 }
 
 type inventoryServiceClient struct {
@@ -37,10 +37,10 @@ func NewInventoryServiceClient(cc grpc.ClientConnInterface) InventoryServiceClie
 	return &inventoryServiceClient{cc}
 }
 
-func (c *inventoryServiceClient) ChackStock(ctx context.Context, in *CheckStockRequest, opts ...grpc.CallOption) (*CheckStockResponse, error) {
+func (c *inventoryServiceClient) CheckStock(ctx context.Context, in *CheckStockRequest, opts ...grpc.CallOption) (*CheckStockResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CheckStockResponse)
-	err := c.cc.Invoke(ctx, InventoryService_ChackStock_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, InventoryService_CheckStock_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (c *inventoryServiceClient) ChackStock(ctx context.Context, in *CheckStockR
 // All implementations must embed UnimplementedInventoryServiceServer
 // for forward compatibility.
 type InventoryServiceServer interface {
-	ChackStock(context.Context, *CheckStockRequest) (*CheckStockResponse, error)
+	CheckStock(context.Context, *CheckStockRequest) (*CheckStockResponse, error)
 	mustEmbedUnimplementedInventoryServiceServer()
 }
 
@@ -62,8 +62,8 @@ type InventoryServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedInventoryServiceServer struct{}
 
-func (UnimplementedInventoryServiceServer) ChackStock(context.Context, *CheckStockRequest) (*CheckStockResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ChackStock not implemented")
+func (UnimplementedInventoryServiceServer) CheckStock(context.Context, *CheckStockRequest) (*CheckStockResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CheckStock not implemented")
 }
 func (UnimplementedInventoryServiceServer) mustEmbedUnimplementedInventoryServiceServer() {}
 func (UnimplementedInventoryServiceServer) testEmbeddedByValue()                          {}
@@ -86,20 +86,20 @@ func RegisterInventoryServiceServer(s grpc.ServiceRegistrar, srv InventoryServic
 	s.RegisterService(&InventoryService_ServiceDesc, srv)
 }
 
-func _InventoryService_ChackStock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _InventoryService_CheckStock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CheckStockRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(InventoryServiceServer).ChackStock(ctx, in)
+		return srv.(InventoryServiceServer).CheckStock(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: InventoryService_ChackStock_FullMethodName,
+		FullMethod: InventoryService_CheckStock_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(InventoryServiceServer).ChackStock(ctx, req.(*CheckStockRequest))
+		return srv.(InventoryServiceServer).CheckStock(ctx, req.(*CheckStockRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -112,8 +112,8 @@ var InventoryService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*InventoryServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "ChackStock",
-			Handler:    _InventoryService_ChackStock_Handler,
+			MethodName: "CheckStock",
+			Handler:    _InventoryService_CheckStock_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
