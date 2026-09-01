@@ -3,7 +3,7 @@ package inventory.v1;
 
 option go_package = "github.com/ametowartem/orderflow/proto/inventory/v1;inventoryv1";
 service InventoryService {
-    rpc ChackStock(CheckStockRequest) returns (CheckStockResponse);
+    rpc CheckStock(CheckStockRequest) returns (CheckStockResponse);
 }
 
 message CheckStockRequest {
