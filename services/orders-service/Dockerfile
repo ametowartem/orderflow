@@ -1,6 +1,6 @@
 # --- Стадия 1: сборка ---
 FROM golang:1.26-alpine AS builder
-
+RUN apk add --no-cache git
 WORKDIR /app
 
 # Сначала только go.mod/go.sum — это даёт Docker слой, который
