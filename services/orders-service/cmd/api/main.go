@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/ametowartem/orderflow/orders-service/internal/client"
 	"github.com/ametowartem/orderflow/orders-service/internal/handler"
 	"github.com/ametowartem/orderflow/orders-service/internal/service"
 	"github.com/ametowartem/orderflow/orders-service/internal/store/postgres"
@@ -30,7 +31,18 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	svc := service.NewOrderService(pgStore)
+
+	inventoryAddr := os.Getenv("INVENTORY_SERVICE_ADDR")
+	if inventoryAddr == "" {
+		inventoryAddr = "localhost:50051"
+	}
+
+	inventoryClient, err := client.NewInventoryClient(inventoryAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	svc := service.NewOrderService(pgStore, inventoryClient)
 	handler := handler.NewOrderHandler(svc)
 
 	r.GET("/health", health)

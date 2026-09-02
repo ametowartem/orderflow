@@ -96,9 +96,16 @@ func (h *OrderHandler) Create(c *gin.Context) {
 		items = append(items, toDomainOrderItem(i))
 	}
 
-	order, err := h.svc.CreateOrder(orderRequest.UserID, items)
+	order, err := h.svc.CreateOrder(c.Request.Context(), orderRequest.UserID, items)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		switch {
+		case errors.Is(err, domain.ErrInvalidAmount), errors.Is(err, domain.ErrAmountTooHigh):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		case errors.Is(err, domain.ErrInsufficientStock):
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		}
 		return
 	}
 

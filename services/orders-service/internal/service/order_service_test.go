@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -38,46 +39,78 @@ func (f *fakeStore) List() ([]domain.Order, error) {
 	return []domain.Order{}, nil
 }
 
-func TestOrderService_CreateOrder_Success(t *testing.T) {
-	// Arrange
-	store := &fakeStore{}
-	svc := NewOrderService(store)
+type fakeStockChecker struct {
+	checkStockFn func(
+		ctx context.Context,
+		productID string,
+		quantity int32,
+	) (bool, error)
+}
 
-	items := []domain.OrderItem{
-		{ProductID: "prod-1", Quantity: 2, PriceAtOrder: 50.25},
-		{ProductID: "prod-2", Quantity: 1, PriceAtOrder: 10.00},
+func (f *fakeStockChecker) CheckStock(
+	ctx context.Context,
+	productID string,
+	quantity int32,
+) (bool, error) {
+	if f.checkStockFn != nil {
+		return f.checkStockFn(ctx, productID, quantity)
 	}
 
-	// Act
-	order, err := svc.CreateOrder("user-123", items)
+	return true, nil
+}
 
-	// Assert
-	require.NoError(t, err, "не ожидали ошибку при валидных данных")
+func TestOrderService_CreateOrder_Success(t *testing.T) {
+	store := &fakeStore{}
+	stockChecker := &fakeStockChecker{}
+
+	svc := NewOrderService(store, stockChecker)
+
+	items := []domain.OrderItem{
+		{
+			ProductID:    "prod-1",
+			Quantity:     2,
+			PriceAtOrder: 50.25,
+		},
+		{
+			ProductID:    "prod-2",
+			Quantity:     1,
+			PriceAtOrder: 10.00,
+		},
+	}
+
+	order, err := svc.CreateOrder(
+		context.Background(),
+		"user-123",
+		items,
+	)
+
+	require.NoError(t, err)
 	assert.Equal(t, "user-123", order.UserID)
-	assert.Equal(t, 110.50, order.TotalAmount) // 2*50.25 + 1*10.00
+	assert.Equal(t, 110.50, order.TotalAmount)
 	assert.Equal(t, domain.StatusPending, order.Status)
-	assert.NotEmpty(t, order.ID, "ID заказа должен был сгенерироваться")
-	assert.Len(t, order.Items, 2, "количество элементов заказа должно совпадать")
-
-	// Проверяем, что ID сгенерировались для каждого элемента заказа
-	assert.NotEmpty(t, order.Items[0].ID, "ID элемента заказа должен был сгенерироваться")
-	assert.NotEmpty(t, order.Items[1].ID, "ID элемента заказа должен был сгенерироваться")
-	assert.False(t, order.CreatedAt.IsZero(), "CreatedAt должен был быть установлен")
+	assert.NotEmpty(t, order.ID)
+	assert.Len(t, order.Items, 2)
+	assert.NotEmpty(t, order.Items[0].ID)
+	assert.NotEmpty(t, order.Items[1].ID)
+	assert.False(t, order.CreatedAt.IsZero())
 }
 
 // Тест на корректную обработку пустого списка товаров
 func TestOrderService_CreateOrder_EmptyItems(t *testing.T) {
-	// Arrange
 	store := &fakeStore{}
-	svc := NewOrderService(store)
+	stockChecker := &fakeStockChecker{}
 
-	// Act
-	order, err := svc.CreateOrder("user-123", []domain.OrderItem{})
+	svc := NewOrderService(store, stockChecker)
 
-	// Assert
-	require.NoError(t, err, "ошибка не ожидалась при пустом списке товаров")
+	order, err := svc.CreateOrder(
+		context.Background(),
+		"user-123",
+		[]domain.OrderItem{},
+	)
+
+	require.NoError(t, err)
 	assert.Equal(t, "user-123", order.UserID)
-	assert.Equal(t, 0.0, order.TotalAmount, "сумма должна быть 0 при пустом списке")
+	assert.Equal(t, 0.0, order.TotalAmount)
 	assert.Equal(t, domain.StatusPending, order.Status)
 	assert.NotEmpty(t, order.ID)
 	assert.Empty(t, order.Items)
@@ -88,24 +121,157 @@ func TestOrderService_CreateOrder_EmptyItems(t *testing.T) {
 // CreateOrder рассчитывает сумму автоматически на основе элементов и не
 // выполняет валидацию на отрицательные значения.
 func TestOrderService_CreateOrder_StoreError(t *testing.T) {
-	// Arrange
 	expectedErr := errors.New("db connection failed")
+
 	store := &fakeStore{
 		createFn: func(order domain.Order) error {
 			return expectedErr
 		},
 	}
-	svc := NewOrderService(store)
+
+	stockChecker := &fakeStockChecker{}
+
+	svc := NewOrderService(store, stockChecker)
 
 	items := []domain.OrderItem{
-		{ProductID: "prod-1", Quantity: 1, PriceAtOrder: 100.0},
+		{
+			ProductID:    "prod-1",
+			Quantity:     1,
+			PriceAtOrder: 100.0,
+		},
 	}
 
-	// Act
-	order, err := svc.CreateOrder("user-123", items)
+	order, err := svc.CreateOrder(
+		context.Background(),
+		"user-123",
+		items,
+	)
 
-	// Assert
-	require.Error(t, err, "ожидалась ошибка от хранилища")
-	assert.ErrorIs(t, err, expectedErr, "ошибка должна совпадать с ошибкой хранилища")
-	assert.Empty(t, order.ID, "заказ не должен был быть создан при ошибке хранилища")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, expectedErr)
+	assert.Empty(t, order.ID)
+}
+
+func TestOrderService_CreateOrder_StockCheckError(t *testing.T) {
+	expectedErr := errors.New("stock service unavailable")
+
+	store := &fakeStore{}
+
+	stockChecker := &fakeStockChecker{
+		checkStockFn: func(
+			ctx context.Context,
+			productID string,
+			quantity int32,
+		) (bool, error) {
+			assert.Equal(t, "prod-1", productID)
+			assert.Equal(t, int32(2), quantity)
+
+			return false, expectedErr
+		},
+	}
+
+	svc := NewOrderService(store, stockChecker)
+
+	items := []domain.OrderItem{
+		{
+			ProductID:    "prod-1",
+			Quantity:     2,
+			PriceAtOrder: 50,
+		},
+	}
+
+	order, err := svc.CreateOrder(
+		context.Background(),
+		"user-123",
+		items,
+	)
+
+	require.Error(t, err)
+	assert.ErrorIs(t, err, expectedErr)
+	assert.Contains(t, err.Error(), "check stock for prod-1")
+	assert.Empty(t, order.ID)
+}
+
+func TestOrderService_CreateOrder_InsufficientStock(t *testing.T) {
+	store := &fakeStore{}
+
+	stockChecker := &fakeStockChecker{
+		checkStockFn: func(
+			ctx context.Context,
+			productID string,
+			quantity int32,
+		) (bool, error) {
+			return false, nil
+		},
+	}
+
+	svc := NewOrderService(store, stockChecker)
+
+	items := []domain.OrderItem{
+		{
+			ProductID:    "prod-1",
+			Quantity:     3,
+			PriceAtOrder: 100,
+		},
+	}
+
+	order, err := svc.CreateOrder(
+		context.Background(),
+		"user-123",
+		items,
+	)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "product prod-1: insufficient stock")
+	assert.Empty(t, order.ID)
+}
+
+func TestOrderService_CreateOrder_InvalidAmount(t *testing.T) {
+	store := &fakeStore{}
+	stockChecker := &fakeStockChecker{}
+
+	svc := NewOrderService(store, stockChecker)
+
+	items := []domain.OrderItem{
+		{
+			ProductID:    "prod-1",
+			Quantity:     1,
+			PriceAtOrder: 0,
+		},
+	}
+
+	order, err := svc.CreateOrder(
+		context.Background(),
+		"user-123",
+		items,
+	)
+
+	require.Error(t, err)
+	assert.ErrorIs(t, err, domain.ErrInvalidAmount)
+	assert.Empty(t, order.ID)
+}
+
+func TestOrderService_CreateOrder_AmountTooHigh(t *testing.T) {
+	store := &fakeStore{}
+	stockChecker := &fakeStockChecker{}
+
+	svc := NewOrderService(store, stockChecker)
+
+	items := []domain.OrderItem{
+		{
+			ProductID:    "prod-1",
+			Quantity:     2,
+			PriceAtOrder: 600_000,
+		},
+	}
+
+	order, err := svc.CreateOrder(
+		context.Background(),
+		"user-123",
+		items,
+	)
+
+	require.Error(t, err)
+	assert.ErrorIs(t, err, domain.ErrAmountTooHigh)
+	assert.Empty(t, order.ID)
 }

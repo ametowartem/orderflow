@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+	"fmt"
 	"time"
 
 	"github.com/ametowartem/orderflow/orders-service/internal/domain"
@@ -13,15 +15,21 @@ type OrderStore interface {
 	List() ([]domain.Order, error)
 }
 
+type StockChecker interface {
+	CheckStock(ctx context.Context, productID string, quantity int32) (bool, error)
+}
+
 type OrderService struct {
-	store OrderStore
+	store        OrderStore
+	stockChecker StockChecker
 }
 
-func NewOrderService(store OrderStore) *OrderService {
-	return &OrderService{store: store}
+func NewOrderService(store OrderStore, stockChecker StockChecker) *OrderService {
+	return &OrderService{store: store, stockChecker: stockChecker}
 }
 
-func (s *OrderService) CreateOrder(userID string, items []domain.OrderItem) (domain.Order, error) {
+func (s *OrderService) CreateOrder(ctx context.Context, userID string, items []domain.OrderItem) (domain.Order, error) {
+
 	id := uuid.New()
 	status := domain.StatusPending
 
@@ -38,6 +46,17 @@ func (s *OrderService) CreateOrder(userID string, items []domain.OrderItem) (dom
 
 	if total > 1_000_000 {
 		return domain.Order{}, domain.ErrAmountTooHigh
+	}
+
+	for _, item := range items {
+		available, err := s.stockChecker.CheckStock(ctx, item.ProductID, int32(item.Quantity))
+
+		if err != nil {
+			return domain.Order{}, fmt.Errorf("check stock for %s: %w", item.ProductID, err)
+		}
+		if !available {
+			return domain.Order{}, fmt.Errorf("product %s: %w", item.ProductID, domain.ErrInsufficientStock)
+		}
 	}
 
 	order := domain.Order{

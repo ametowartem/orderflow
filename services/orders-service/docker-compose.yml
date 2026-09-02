@@ -17,11 +17,13 @@ services:
     networks:
       - orderflow
   order-service:
-    build: 
+    build:
       dockerfile: ./Dockerfile
       context: .
     ports:
       - "8080:8080"
+    environment:
+      INVENTORY_SERVICE_ADDR: "inventory-service:50051"
     networks:
       - orderflow
     depends_on:
