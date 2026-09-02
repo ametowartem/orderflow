@@ -4,6 +4,7 @@ package inventory.v1;
 option go_package = "github.com/ametowartem/orderflow/proto/inventory/v1;inventoryv1";
 service InventoryService {
     rpc CheckStock(CheckStockRequest) returns (CheckStockResponse);
+    rpc ReserveStock(ReserveStockRequest) returns (ReserveStockResponse);
 }
 
 message CheckStockRequest {
@@ -13,4 +14,14 @@ message CheckStockRequest {
 
 message CheckStockResponse {
     bool available = 1;
+}
+
+message ReserveStockRequest {
+    string order_id = 1;
+    string product_id = 2;
+    int32 quantity = 3;
+}
+
+message ReserveStockResponse {
+    string reservation_id = 1;
 }
