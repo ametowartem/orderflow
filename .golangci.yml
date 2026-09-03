@@ -1,35 +1,142 @@
 version: "2"
 
+run:
+  timeout: 5m
+  relative-path-mode: gomod
+  tests: true
+  modules-download-mode: readonly
+  allow-parallel-runners: true
+
+output:
+  formats:
+    text:
+      path: stdout
+      colors: true
+  sort-order:
+    - file
+    - linter
+    - severity
+  show-stats: false
+
 linters:
   default: none
-  enable:
-    # обязательный минимум — то, что реально ловит баги, а не стиль
-    - govet # находит подозрительные конструкции (Printf-аргументы, копирование мьютексов и т.п.)
-    - staticcheck # самый умный линтер, ловит логические ошибки
-    - errcheck # именно то, что мы разбирали на ревью: непроверенные ошибки
-    - ineffassign # присвоил значение переменной и никогда не прочитал
-    - unused # неиспользуемые переменные/функции/импорты
 
-    # чуть более "придирчивые", но полезные на твоём уровне
-    - modernize # предлагает более идиоматичный/короткий вариант кода
-    - bodyclose # забыл closeAll() у http.Response.Body — частая утечка
-    - contextcheck # неправильная передача context.Context
-    - copyloopvar # для Go >=1.22, ловит устаревшие паттерны захвата переменной цикла
-    - nilerr # return nil там, где реально была ошибка (тот самый баг с проглоченным err)
+  enable:
+    # Базовая корректность
+    - govet
+    - staticcheck
+    - errcheck
+    - ineffassign
+    - unused
+    - nilerr
+    - nilnesserr
+
+    # Ошибки и их обработка
+    - errorlint
+    - err113
+    - wrapcheck
+    - rowserrcheck
+    - sqlclosecheck
+
+    # Context и HTTP
+    - contextcheck
+    - noctx
+    - fatcontext
+    - bodyclose
+
+    # Безопасность
+    - gosec
+    - bidichk
+    - asciicheck
+
+    # Современный Go
+    - modernize
+    - copyloopvar
+    - intrange
+    - exptostd
+
+    # Частые логические ошибки
+    - durationcheck
+    - makezero
+    - mirror
+    - forcetypeassert
+    - loggercheck
+    - musttag
+
+    # Контроль сложности
+    - cyclop
+    - gocognit
+    - nestif
+
+    # Качество API и зависимостей
+    - iface
+    - interfacebloat
+    - predeclared
+    - reassign
+
+    # Явные подозрительные конструкции
+    - dogsled
+    - nolintlint
 
   settings:
     errcheck:
       check-type-assertions: true
       check-blank: true
 
-exclusions:
-  rules:
-    # в тестах часто осознанно не проверяют err у os.WriteFile/t.Cleanup и т.п.
-    - path: '_test\.go'
-      linters:
-        - errcheck
+    govet:
+      enable:
+        - shadow
+
+    cyclop:
+      max-complexity: 15
+
+    gocognit:
+      min-complexity: 25
+
+    nestif:
+      min-complexity: 5
+
+    gosec:
+      excludes:
+        - G115
+
+  exclusions:
+    generated: strict
+    warn-unused: true
+
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+
+    rules:
+      # В тестах допускаем осознанное игнорирование ошибок.
+      # Остальные линтеры продолжают работать.
+      - path: '(^|/)_test\.go$'
+        linters:
+          - errcheck
+
+      # В тестах часто используются принудительные assertions.
+      - path: '(^|/)_test\.go$'
+        linters:
+          - forcetypeassert
+
+      # Примеры могут содержать намеренно упрощённый код.
+      - path: "(^|/)example[s]?/"
+        linters:
+          - errcheck
+          - gosec
 
 formatters:
   enable:
     - gofmt
     - goimports
+
+  exclusions:
+    generated: strict
+    warn-unused: true
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
