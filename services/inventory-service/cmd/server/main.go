@@ -30,10 +30,15 @@ func main() {
 	queries := sqlcgen.New(pool)
 	server := grpcserver.NewInventoryServer(queries)
 
-	lis, err := net.Listen("tcp", ":50051")
+	listenConfig := &net.ListenConfig{}
+
+	lis, err := listenConfig.Listen(ctx, "tcp", ":50051")
+
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	defer lis.Close()
 
 	grpcServer := grpc.NewServer()
 
