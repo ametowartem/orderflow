@@ -28,7 +28,7 @@ func main() {
 	}
 
 	queries := sqlcgen.New(pool)
-	server := grpcserver.NewInventoryServer(queries)
+	server := grpcserver.NewInventoryServer(queries, pool)
 
 	listenConfig := &net.ListenConfig{}
 
