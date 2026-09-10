@@ -1,0 +1,30 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Документация
+docs/
+*.md
+!README.md
+
+# Локальные файлы
+saved-listing.md
+
+# Docker
+docker-compose.yml
+**/Dockerfile
+.dockerignore
+
+# Тесты и артефакты
+**/*_test.go
+**/testdata/
+coverage.out
+
+# Binaries
+**/*.exe
+**/*.out

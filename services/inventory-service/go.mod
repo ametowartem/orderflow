@@ -3,7 +3,7 @@ module github.com/ametowartem/orderflow/inventory-service
 go 1.26.5
 
 require (
-	github.com/ametowartem/orderflow/proto v0.1.1
+	github.com/ametowartem/orderflow/proto v0.1.2
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/pressly/goose/v3 v3.28.0
